@@ -1,0 +1,735 @@
+import os
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
+import threading
+import time
+
+# Set appearance mode and color theme for smooth animations
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+class ModernNotepad:
+    def __init__(self, **kwargs):
+        # Initialize the main window
+        self.__root = ctk.CTk()
+        
+        # Default window settings
+        self.__thisWidth = kwargs.get('width', 1200)
+        self.__thisHeight = kwargs.get('height', 700)
+        self.__thisTitle = "Modern AI Notepad"
+        self.__file = None
+        self.__ai_panel_visible = False
+        self.__ai_panel_width = 350
+        
+        # Configure the main window for smooth performance
+        self.__setup_window()
+        self.__create_menu()
+        self.__create_toolbar()
+        self.__create_main_content()
+        self.__create_ai_assistant()
+        self.__create_status_bar()
+        self.__create_custom_title_bar()
+        
+        # Enable smooth animations
+        self.__setup_smooth_animations()
+        
+    def __setup_window(self):
+        """Setup the main window with smooth performance optimizations"""
+        try:
+            self.__root.iconbitmap("notepad.ico")
+        except:
+            pass
+            
+        self.__root.title(self.__thisTitle)
+        
+        # Center the window
+        screenWidth = self.__root.winfo_screenwidth()
+        screenHeight = self.__root.winfo_screenheight()
+        left = int((screenWidth / 2) - (self.__thisWidth / 2))
+        top = int((screenHeight / 2) - (self.__thisHeight / 2))
+        self.__root.geometry(f'{self.__thisWidth}x{self.__thisHeight}+{left}+{top}')
+        
+        # Configure grid weights for smooth resizing
+        self.__root.grid_rowconfigure(2, weight=1)
+        self.__root.grid_columnconfigure(0, weight=1)
+        
+        # Set minimum window size
+        self.__root.minsize(800, 500)
+        
+    def __setup_smooth_animations(self):
+        """Setup smooth animations and transitions"""
+        # Configure smooth hover effects for all buttons
+        self.__root.after(100, self.__animate_startup)
+        
+    def __animate_startup(self):
+        """Smooth startup animation"""
+        # Fade in effect simulation
+        alpha_values = [0.3, 0.5, 0.7, 0.85, 1.0]
+        for i, alpha in enumerate(alpha_values):
+            self.__root.after(i * 50, lambda a=alpha: self.__set_window_alpha(a))
+    
+    def __set_window_alpha(self, alpha):
+        """Set window transparency for smooth effects"""
+        try:
+            self.__root.attributes('-alpha', alpha)
+        except:
+            pass
+        
+    def __create_menu(self):
+        """Create the menu bar with smooth hover effects"""
+        menu_frame = ctk.CTkFrame(self.__root, height=40, corner_radius=0, 
+                                 fg_color=("gray85", "#2b2b2b"))
+        menu_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
+        menu_frame.grid_propagate(False)
+        
+        # File menu button with smooth hover
+        self.__file_menu_btn = ctk.CTkButton(
+            menu_frame, text="File", width=70, height=32,
+            fg_color="transparent", hover_color=("gray75", "gray30"),
+            command=self.__show_file_menu, corner_radius=6,
+            font=ctk.CTkFont(size=13)
+        )
+        self.__file_menu_btn.grid(row=0, column=0, padx=8, pady=4, sticky="w")
+        
+        # Edit menu button
+        self.__edit_menu_btn = ctk.CTkButton(
+            menu_frame, text="Edit", width=70, height=32,
+            fg_color="transparent", hover_color=("gray75", "gray30"),
+            command=self.__show_edit_menu, corner_radius=6,
+            font=ctk.CTkFont(size=13)
+        )
+        self.__edit_menu_btn.grid(row=0, column=1, padx=8, pady=4, sticky="w")
+        
+        # AI menu button
+        self.__ai_menu_btn = ctk.CTkButton(
+            menu_frame, text="AI Assistant", width=100, height=32,
+            fg_color="transparent", hover_color=("gray75", "gray30"),
+            command=self.__toggle_ai_panel, corner_radius=6,
+            font=ctk.CTkFont(size=13)
+        )
+        self.__ai_menu_btn.grid(row=0, column=2, padx=8, pady=4, sticky="w")
+        
+        # Help menu button
+        self.__help_menu_btn = ctk.CTkButton(
+            menu_frame, text="Help", width=70, height=32,
+            fg_color="transparent", hover_color=("gray75", "gray30"),
+            command=self.__show_help_menu, corner_radius=6,
+            font=ctk.CTkFont(size=13)
+        )
+        self.__help_menu_btn.grid(row=0, column=3, padx=8, pady=4, sticky="w")
+        
+        self.__bind_shortcuts()
+        
+    def __show_file_menu(self):
+        """Show file menu with smooth appearance"""
+        file_menu = tk.Menu(self.__root, tearoff=0, bg='#2b2b2b', fg='white',
+                           activebackground='#1f538d', activeforeground='white',
+                           relief='flat', borderwidth=1)
+        file_menu.add_command(label="New                 Ctrl+N", command=self.__newFile)
+        file_menu.add_command(label="Open               Ctrl+O", command=self.__openFile)
+        file_menu.add_command(label="Save                Ctrl+S", command=self.__saveFile)
+        file_menu.add_command(label="Save As      Ctrl+Shift+S", command=self.__saveAsFile)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit                 Ctrl+Q", command=self.__quitApplication)
+        
+        x = self.__file_menu_btn.winfo_rootx()
+        y = self.__file_menu_btn.winfo_rooty() + self.__file_menu_btn.winfo_height()
+        file_menu.tk_popup(x, y)
+        
+    def __show_edit_menu(self):
+        """Show edit menu"""
+        edit_menu = tk.Menu(self.__root, tearoff=0, bg='#2b2b2b', fg='white',
+                           activebackground='#1f538d', activeforeground='white',
+                           relief='flat', borderwidth=1)
+        edit_menu.add_command(label="Undo               Ctrl+Z", command=self.__undo)
+        edit_menu.add_command(label="Redo               Ctrl+Y", command=self.__redo)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="Cut                 Ctrl+X", command=self.__cut)
+        edit_menu.add_command(label="Copy               Ctrl+C", command=self.__copy)
+        edit_menu.add_command(label="Paste              Ctrl+V", command=self.__paste)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="Select All         Ctrl+A", command=self.__select_all)
+        edit_menu.add_command(label="Clear", command=self.__clear)
+        
+        x = self.__edit_menu_btn.winfo_rootx()
+        y = self.__edit_menu_btn.winfo_rooty() + self.__edit_menu_btn.winfo_height()
+        edit_menu.tk_popup(x, y)
+        
+    def __show_help_menu(self):
+        """Show help menu"""
+        help_menu = tk.Menu(self.__root, tearoff=0, bg='#2b2b2b', fg='white',
+                           activebackground='#1f538d', activeforeground='white',
+                           relief='flat', borderwidth=1)
+        help_menu.add_command(label="About", command=self.__showAbout)
+        
+        x = self.__help_menu_btn.winfo_rootx()
+        y = self.__help_menu_btn.winfo_rooty() + self.__help_menu_btn.winfo_height()
+        help_menu.tk_popup(x, y)
+        
+    def __create_toolbar(self):
+        """Create smooth animated toolbar"""
+        toolbar_frame = ctk.CTkFrame(self.__root, height=65, corner_radius=0,
+                                   fg_color=("gray90", "#262626"))
+        toolbar_frame.grid(row=1, column=0, sticky="ew", padx=0, pady=0)
+        toolbar_frame.grid_propagate(False)
+        
+        # Smooth button creation with consistent styling
+        buttons_data = [
+            ("Clear", self.__clear, 0),
+            ("Undo", self.__undo, 1),
+            ("Redo", self.__redo, 2),
+            ("Save", self.__saveFile, 4),
+            ("Open", self.__openFile, 5),
+            ("New", self.__newFile, 6)
+        ]
+        
+        for text, command, col in buttons_data:
+            btn = ctk.CTkButton(
+                toolbar_frame, text=text, width=85, height=38,
+                command=command, corner_radius=8,
+                font=ctk.CTkFont(size=12, weight="bold"),
+                hover_color=("gray70", "gray40")
+            )
+            btn.grid(row=0, column=col, padx=12, pady=13, sticky="w")
+            
+        # Smooth separator
+        separator = ctk.CTkFrame(toolbar_frame, width=3, height=35, 
+                               fg_color=("gray60", "gray50"), corner_radius=1)
+        separator.grid(row=0, column=3, padx=25, pady=15, sticky="w")
+        
+    def __create_main_content(self):
+        """Create main content area with smooth layout"""
+        self.__main_container = ctk.CTkFrame(self.__root, corner_radius=0, 
+                                           fg_color="transparent")
+        self.__main_container.grid(row=2, column=0, sticky="nsew", padx=0, pady=0)
+        self.__main_container.grid_rowconfigure(0, weight=1)
+        self.__main_container.grid_columnconfigure(0, weight=1)
+        
+        # Text area frame
+        self.__text_frame = ctk.CTkFrame(self.__main_container, corner_radius=12)
+        self.__text_frame.grid(row=0, column=0, sticky="nsew", padx=15, pady=(8, 15))
+        self.__text_frame.grid_rowconfigure(0, weight=1)
+        self.__text_frame.grid_columnconfigure(0, weight=1)
+        
+        # Enhanced text area with smooth scrolling
+        self.__thisTextArea = ctk.CTkTextbox(
+            self.__text_frame,
+            font=ctk.CTkFont(family="Consolas", size=13),
+            wrap="word",
+            corner_radius=10,
+            undo=True,
+            scrollbar_button_color=("gray60", "gray40"),
+            scrollbar_button_hover_color=("gray50", "gray50")
+        )
+        self.__thisTextArea.grid(row=0, column=0, sticky="nsew", padx=12, pady=12)
+
+        # --- Improved floating AI Assistant button ---
+        self.__ai_fab = ctk.CTkButton(
+            self.__text_frame,  # Place inside the text frame for better context
+            text="🤖", width=48, height=48,
+            corner_radius=24,
+            fg_color="transparent",  # Make background transparent
+            hover_color="#174080",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            command=self.__toggle_ai_panel,
+            border_width=0
+        )
+        # Place it at the bottom right of the text area with a margin
+        self.__ai_fab.place(relx=0.98, rely=0.96, anchor="se")
+        self.__ai_fab.lift()  # Make sure it's above other widgets
+        # --------------------------------------------
+        
+    def __create_ai_assistant(self):
+        """Create AI Assistant panel with smooth slide animation"""
+        # AI Panel (initially hidden)
+        self.__ai_panel = ctk.CTkFrame(self.__main_container, width=self.__ai_panel_width, 
+                                     corner_radius=12, fg_color=("gray95", "#1f1f1f"))
+        
+        # AI Panel Header
+        ai_header = ctk.CTkFrame(self.__ai_panel, height=50, corner_radius=8,
+                               fg_color=("gray85", "#2d2d2d"))
+        ai_header.pack(fill="x", padx=5, pady=(5, 0))
+        ai_header.pack_propagate(False)
+        
+        ai_title = ctk.CTkLabel(ai_header, text="🤖 AI Assistant", 
+                              font=ctk.CTkFont(size=16, weight="bold"))
+        ai_title.pack(side="left", padx=15, pady=15)
+        
+        close_btn = ctk.CTkButton(ai_header, text="×", width=30, height=30,
+                                command=self.__toggle_ai_panel,
+                                fg_color="transparent", hover_color=("gray70", "gray40"),
+                                font=ctk.CTkFont(size=18, weight="bold"))
+        close_btn.pack(side="right", padx=15, pady=10)
+        
+        # AI Chat Area
+        self.__ai_chat_frame = ctk.CTkScrollableFrame(self.__ai_panel, 
+                                                    fg_color=("white", "#1a1a1a"),
+                                                    corner_radius=8)
+        self.__ai_chat_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # AI Input Area
+        input_frame = ctk.CTkFrame(self.__ai_panel, height=80, corner_radius=8,
+                                 fg_color=("gray90", "#2a2a2a"))
+        input_frame.pack(fill="x", padx=10, pady=(0, 10))
+        input_frame.pack_propagate(False)
+        
+        self.__ai_input = ctk.CTkEntry(input_frame, placeholder_text="Ask AI assistant...",
+                                     font=ctk.CTkFont(size=12), height=35, corner_radius=6)
+        self.__ai_input.pack(side="left", fill="x", expand=True, padx=10, pady=10)
+        
+        send_btn = ctk.CTkButton(input_frame, text="Send", width=70, height=35,
+                               command=self.__send_ai_message, corner_radius=6,
+                               font=ctk.CTkFont(size=12, weight="bold"))
+        send_btn.pack(side="right", padx=(5, 10), pady=10)
+        
+        # Bind Enter key for AI input
+        self.__ai_input.bind("<Return>", lambda e: self.__send_ai_message())
+        
+        # Add welcome message
+        self.__add_ai_message("Hello! I'm your AI writing assistant. I can help you with:\n\n• Writing suggestions\n• Grammar corrections\n• Content ideas\n• Text summarization\n\nHow can I assist you today?", "assistant")
+        
+    def __toggle_ai_panel(self):
+        """Smooth toggle animation for AI panel"""
+        if not self.__ai_panel_visible:
+            # Show AI panel with smooth animation
+            self.__ai_panel_visible = True
+            self.__ai_panel.grid(row=0, column=1, sticky="nsew", padx=(0, 15), pady=(8, 15))
+            self.__main_container.grid_columnconfigure(1, weight=0, minsize=self.__ai_panel_width)
+            self.__animate_panel_slide(True)
+        else:
+            # Hide AI panel with smooth animation
+            self.__ai_panel_visible = False
+            self.__animate_panel_slide(False)
+            
+    def __animate_panel_slide(self, show):
+        """Animate panel sliding in/out"""
+        if show:
+            # Slide in animation
+            widths = [0, 100, 200, 300, self.__ai_panel_width]
+            for i, width in enumerate(widths):
+                self.__root.after(i * 30, lambda w=width: self.__set_panel_width(w))
+        else:
+            # Slide out animation
+            widths = [self.__ai_panel_width, 250, 150, 50, 0]
+            for i, width in enumerate(widths):
+                self.__root.after(i * 30, lambda w=width: self.__set_panel_width(w))
+            self.__root.after(len(widths) * 30, self.__hide_panel)
+            
+    def __set_panel_width(self, width):
+        """Set panel width during animation"""
+        try:
+            self.__main_container.grid_columnconfigure(1, minsize=width)
+            self.__root.update_idletasks()
+        except:
+            pass
+            
+    def __hide_panel(self):
+        """Hide panel after animation"""
+        try:
+            self.__ai_panel.grid_remove()
+            self.__main_container.grid_columnconfigure(1, weight=0, minsize=0)
+        except:
+            pass
+        
+    def __send_ai_message(self):
+        """Send message to AI assistant"""
+        user_message = self.__ai_input.get().strip()
+        if not user_message:
+            return
+            
+        # Clear input
+        self.__ai_input.delete(0, 'end')
+        
+        # Add user message to chat
+        self.__add_ai_message(user_message, "user")
+        
+        # Show typing indicator
+        typing_msg = self.__add_ai_message("AI is thinking...", "typing")
+        
+        # Process AI response in background thread for smooth UI
+        threading.Thread(target=self.__process_ai_response, 
+                        args=(user_message, typing_msg), daemon=True).start()
+        
+    def __process_ai_response(self, user_message, typing_msg):
+        """Process AI response using local AI model"""
+        try:
+            # Simulate AI processing time for smooth UX
+            time.sleep(1)
+            
+            # Generate AI response using local model
+            ai_response = self.__generate_ai_response(user_message)
+            
+            # Update UI in main thread
+            self.__root.after(0, lambda: self.__update_ai_response(typing_msg, ai_response))
+            
+        except Exception as e:
+            error_msg = f"Sorry, I encountered an error: {str(e)}"
+            self.__root.after(0, lambda: self.__update_ai_response(typing_msg, error_msg))
+    
+    def __generate_ai_response(self, user_message):
+        """Generate AI response using local AI model (Hugging Face Transformers)"""
+        try:
+            # Here's how to integrate different free local AI options:
+            
+            # Option 1: Hugging Face Transformers (Recommended)
+            # Uncomment and install: pip install transformers torch
+            """
+            from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+            
+            # Load a lightweight conversational model
+            model_name = "microsoft/DialoGPT-medium"  # or "facebook/blenderbot-400M-distill"
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModelForCausalLM.from_pretrained(model_name)
+            
+            # Generate response
+            generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+            response = generator(user_message, max_length=150, num_return_sequences=1)
+            return response[0]['generated_text']
+            """
+            
+            # Option 2: Use Ollama (Local LLM server)
+            # Install Ollama and run: ollama pull llama2
+            """
+            import requests
+            
+            response = requests.post('http://localhost:11434/api/generate',
+                                   json={
+                                       'model': 'llama2',
+                                       'prompt': user_message,
+                                       'stream': False
+                                   })
+            return response.json()['response']
+            """
+            
+            # Option 3: Simple rule-based responses for demonstration
+            return self.__simple_ai_response(user_message)
+            
+        except Exception as e:
+            return f"I'm having trouble processing that. Error: {str(e)}"
+    
+    def __simple_ai_response(self, message):
+        """Simple AI-like responses for demonstration"""
+        message_lower = message.lower()
+        
+        # Context-aware responses based on notepad content
+        current_text = self.__thisTextArea.get("1.0", "end-1c")
+        
+        if "help" in message_lower or "assist" in message_lower:
+            return "I can help you with writing, editing, and improving your text. What specific assistance do you need?"
+        
+        elif "grammar" in message_lower or "correct" in message_lower:
+            if current_text.strip():
+                return "I notice you have some text in your notepad. Here are some quick grammar suggestions:\n\n• Check for consistent tense usage\n• Ensure subject-verb agreement\n• Consider sentence variety\n\nWould you like me to review specific sections?"
+            else:
+                return "I can help with grammar correction once you have some text. Start writing and I'll provide suggestions!"
+        
+        elif "summarize" in message_lower or "summary" in message_lower:
+            if current_text.strip():
+                word_count = len(current_text.split())
+                return f"Your current text has {word_count} words. For a good summary, I suggest:\n\n• Identify main points\n• Remove redundant information\n• Use clear, concise language\n\nWould you like help organizing your key points?"
+            else:
+                return "I can help summarize text once you have some content written. Add some text and I'll help you create a concise summary."
+        
+        elif "improve" in message_lower or "better" in message_lower:
+            return "Here are some ways to improve your writing:\n\n• Use active voice\n• Vary sentence length\n• Choose specific words\n• Show, don't tell\n• Read aloud for flow\n\nWhat aspect would you like to focus on?"
+        
+        elif "idea" in message_lower or "topic" in message_lower:
+            return "Here are some writing prompts to spark creativity:\n\n• Write about a childhood memory\n• Describe your ideal day\n• Create a character sketch\n• Write a how-to guide\n• Tell a story in exactly 100 words\n\nWhich type of writing interests you?"
+        
+        else:
+            return f"That's an interesting point about '{message}'. As your writing assistant, I can help you:\n\n• Develop this idea further\n• Organize your thoughts\n• Improve clarity and flow\n• Suggest related topics\n\nHow would you like to proceed?"
+    
+    def __update_ai_response(self, typing_msg, response):
+        """Update AI response in chat"""
+        # Remove typing indicator
+        typing_msg.destroy()
+        
+        # Add AI response
+        self.__add_ai_message(response, "assistant")
+        
+    def __add_ai_message(self, message, sender):
+        """Add message to AI chat with proper text wrapping"""
+        # Create message container with proper width constraints
+        msg_container = ctk.CTkFrame(self.__ai_chat_frame, fg_color="transparent")
+        msg_container.pack(fill="x", padx=5, pady=2)
+        
+        # Create the actual message frame with dynamic width
+        msg_frame = ctk.CTkFrame(msg_container, corner_radius=12,
+                               fg_color=("gray85", "#333333") if sender == "user" else ("#1f538d", "#1f538d"))
+        
+        # Pack message frame with proper alignment
+        if sender == "user":
+            msg_frame.pack(side="right", padx=(50, 0), pady=2)
+        else:
+            msg_frame.pack(side="left", padx=(0, 50), pady=2)
+        
+        # Add prefix for clarity
+        prefix = "You: " if sender == "user" else "🤖 AI: " if sender == "assistant" else "⏳ "
+        full_message = f"{prefix}{message}"
+        
+        # Create text widget for better text handling
+        text_widget = ctk.CTkTextbox(msg_frame, 
+                                   width=260, 
+                                   height=1,  # Will auto-expand
+                                   font=ctk.CTkFont(size=11),
+                                   text_color="white" if sender != "user" else ("gray10", "white"),
+                                   fg_color="transparent",
+                                   corner_radius=0,
+                                   wrap="word",
+                                   activate_scrollbars=False)
+        text_widget.pack(padx=12, pady=8, fill="both", expand=True)
+        
+        # Insert text and make read-only
+        text_widget.insert("1.0", full_message)
+        text_widget.configure(state="disabled")
+        
+        # Calculate and set proper height
+        lines = full_message.count('\n') + 1
+        # Estimate wrapped lines (rough calculation)
+        estimated_wrapped_lines = max(1, len(full_message) // 45)
+        total_lines = max(lines, estimated_wrapped_lines)
+        height = min(max(total_lines * 20, 40), 200)  # Min 40px, Max 200px
+        text_widget.configure(height=height)
+        
+        # Smooth scroll to bottom after a short delay
+        self.__root.after(100, self.__scroll_to_bottom)
+        
+        return msg_frame
+    
+    def __scroll_to_bottom(self):
+        """Smooth scroll to bottom of chat"""
+        try:
+            self.__ai_chat_frame._parent_canvas.yview_moveto(1.0)
+            self.__root.update_idletasks()
+        except:
+            pass
+        
+    def __create_status_bar(self):
+        """Create enhanced status bar"""
+        self.__status_frame = ctk.CTkFrame(self.__root, height=35, corner_radius=0,
+                                         fg_color=("gray85", "#2b2b2b"))
+        self.__status_frame.grid(row=3, column=0, sticky="ew", padx=0, pady=0)
+        self.__status_frame.grid_propagate(False)
+        
+        self.__status_label = ctk.CTkLabel(
+            self.__status_frame, text="Ready", 
+            font=ctk.CTkFont(size=11), anchor="w"
+        )
+        self.__status_label.pack(side="left", padx=15, pady=8)
+        
+        self.__char_count_label = ctk.CTkLabel(
+            self.__status_frame, text="Characters: 0 | Words: 0", 
+            font=ctk.CTkFont(size=11), anchor="e"
+        )
+        self.__char_count_label.pack(side="right", padx=15, pady=8)
+        
+        # Smooth update binding
+        self.__thisTextArea.bind("<KeyRelease>", self.__update_char_count_smooth)
+        self.__thisTextArea.bind("<Button-1>", self.__update_char_count_smooth)
+        
+    def __update_char_count_smooth(self, event=None):
+        """Smooth character count updates"""
+        try:
+            self.__root.after(10, self.__update_char_count)
+        except:
+            pass
+        
+    def __update_char_count(self):
+        """Update character count with smooth animation"""
+        try:
+            content = self.__thisTextArea.get("1.0", "end-1c")
+            char_count = len(content)
+            word_count = len(content.split()) if content.strip() else 0
+            self.__char_count_label.configure(text=f"Characters: {char_count} | Words: {word_count}")
+        except:
+            pass
+        
+    def __bind_shortcuts(self):
+        """Bind keyboard shortcuts"""
+        shortcuts = {
+            '<Control-n>': self.__newFile,
+            '<Control-o>': self.__openFile,
+            '<Control-s>': self.__saveFile,
+            '<Control-Shift-S>': self.__saveAsFile,
+            '<Control-q>': self.__quitApplication,
+            '<Control-z>': self.__undo,
+            '<Control-y>': self.__redo,
+            '<Control-a>': self.__select_all,
+            '<F1>': self.__toggle_ai_panel
+        }
+        
+        for key, func in shortcuts.items():
+            self.__root.bind(key, lambda e, f=func: f())
+    
+    # File operations with smooth status updates
+    def __newFile(self):
+        self.__root.title("Untitled - Modern AI Notepad")
+        self.__file = None
+        self.__thisTextArea.delete("1.0", "end")
+        self.__smooth_status_update("New file created")
+        
+    def __openFile(self):
+        self.__file = filedialog.askopenfilename(
+            defaultextension=".txt",
+            filetypes=[("Text Documents", "*.txt"), ("Python Files", "*.py"), ("All Files", "*.*")]
+        )
+        if self.__file:
+            try:
+                self.__root.title(os.path.basename(self.__file) + " - Modern AI Notepad")
+                self.__thisTextArea.delete("1.0", "end")
+                with open(self.__file, "r", encoding='utf-8') as file:
+                    self.__thisTextArea.insert("1.0", file.read())
+                self.__smooth_status_update(f"Opened: {os.path.basename(self.__file)}")
+                self.__update_char_count()
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not open file: {str(e)}")
+                
+    def __saveFile(self):
+        if self.__file is None:
+            self.__saveAsFile()
+        else:
+            try:
+                with open(self.__file, "w", encoding='utf-8') as file:
+                    file.write(self.__thisTextArea.get("1.0", "end-1c"))
+                self.__smooth_status_update(f"Saved: {os.path.basename(self.__file)}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not save file: {str(e)}")
+                
+    def __saveAsFile(self):
+        self.__file = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text Documents", "*.txt"), ("Python Files", "*.py"), ("All Files", "*.*")]
+        )
+        if self.__file:
+            try:
+                with open(self.__file, "w", encoding='utf-8') as file:
+                    file.write(self.__thisTextArea.get("1.0", "end-1c"))
+                self.__root.title(os.path.basename(self.__file) + " - Modern AI Notepad")
+                self.__smooth_status_update(f"Saved as: {os.path.basename(self.__file)}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not save file: {str(e)}")
+    
+    def __smooth_status_update(self, message):
+        """Update status with smooth animation"""
+        self.__status_label.configure(text=message)
+        # Auto-clear status after 3 seconds
+        self.__root.after(3000, lambda: self.__status_label.configure(text="Ready"))
+    
+    # Text operations
+    def __cut(self):
+        try:
+            self.__thisTextArea.event_generate("<<Cut>>")
+        except: pass
+            
+    def __copy(self):
+        try:
+            self.__thisTextArea.event_generate("<<Copy>>")
+        except: pass
+            
+    def __paste(self):
+        try:
+            self.__thisTextArea.event_generate("<<Paste>>")
+            self.__update_char_count()
+        except: pass
+            
+    def __undo(self):
+        try:
+            self.__thisTextArea.edit_undo()
+            self.__update_char_count()
+        except: pass
+            
+    def __redo(self):
+        try:
+            self.__thisTextArea.edit_redo()
+            self.__update_char_count()
+        except: pass
+            
+    def __clear(self):
+        self.__thisTextArea.delete("1.0", "end")
+        self.__smooth_status_update("Text cleared")
+        self.__update_char_count()
+        
+    def __select_all(self):
+        self.__thisTextArea.tag_add("sel", "1.0", "end")
+        
+    def __quitApplication(self):
+        self.__root.quit()
+        self.__root.destroy()
+        
+    def __showAbout(self):
+        about_window = ctk.CTkToplevel(self.__root)
+        about_window.title("About Modern AI Notepad")
+        about_window.geometry("450x300")
+        about_window.resizable(False, False)
+        about_window.transient(self.__root)
+        about_window.grab_set()
+        
+        # Smooth fade-in for about dialog
+        about_window.attributes('-alpha', 0)
+        for alpha in [0.2, 0.4, 0.6, 0.8, 1.0]:
+            about_window.after(50 * ([0.2, 0.4, 0.6, 0.8, 1.0].index(alpha) + 1), 
+                              lambda a=alpha: about_window.attributes('-alpha', a))
+        
+        title_label = ctk.CTkLabel(about_window, text="Modern AI Notepad", 
+                                  font=ctk.CTkFont(size=28, weight="bold"))
+        title_label.pack(pady=25)
+        
+        version_label = ctk.CTkLabel(about_window, text="Version 3.0 - AI Enhanced", 
+                                    font=ctk.CTkFont(size=16))
+        version_label.pack(pady=8)
+        
+        desc_label = ctk.CTkLabel(about_window, 
+                                 text="A modern, AI-powered notepad with smooth animations\nBuilt with CustomTkinter and local AI integration", 
+                                 font=ctk.CTkFont(size=13))
+        desc_label.pack(pady=15)
+        
+        features_label = ctk.CTkLabel(about_window, 
+                                     text="✨ Smooth animations\n🤖 Local AI assistant\n📝 Advanced text editing\n💾 Smart file management", 
+                                     font=ctk.CTkFont(size=12))
+        features_label.pack(pady=15)
+        
+        ok_btn = ctk.CTkButton(about_window, text="OK", width=120, height=35,
+                              command=about_window.destroy, corner_radius=8)
+        ok_btn.pack(pady=20)
+        
+    def __create_custom_title_bar(self):
+        # Remove default title bar
+        self.__root.overrideredirect(True)
+
+        # Create a custom title bar frame
+        self.__title_bar = ctk.CTkFrame(self.__root, height=38, fg_color="#1f538d", corner_radius=0)
+        self.__title_bar.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self.__title_bar.grid_propagate(False)
+
+        # Title label
+        self.__title_label = ctk.CTkLabel(self.__title_bar, text=self.__thisTitle, font=ctk.CTkFont(size=15, weight="bold"), text_color="white")
+        self.__title_label.pack(side="left", padx=15)
+
+        # Close button
+        close_btn = ctk.CTkButton(self.__title_bar, text="✕", width=32, height=32, fg_color="transparent", hover_color="#e57373", command=self.__quitApplication)
+        close_btn.pack(side="right", padx=8, pady=3)
+
+        # Bind mouse events for dragging
+        self.__title_bar.bind("<ButtonPress-1>", self.__start_move)
+        self.__title_bar.bind("<B1-Motion>", self.__on_move)
+        self.__title_label.bind("<ButtonPress-1>", self.__start_move)
+        self.__title_label.bind("<B1-Motion>", self.__on_move)
+
+    def __start_move(self, event):
+        # Store the offset of the mouse pointer inside the window
+        self._offset_x = event.x_root - self.__root.winfo_x()
+        self._offset_y = event.y_root - self.__root.winfo_y()
+
+    def __on_move(self, event):
+        # Calculate new window position based on the offset
+        x = event.x_root - self._offset_x
+        y = event.y_root - self._offset_y
+        self.__root.geometry(f"+{x}+{y}")
+
+    def run(self):
+        """Run the main loop with smooth startup"""
+        self.__root.mainloop()
+
+if __name__ == "__main__":
+    notepad = ModernNotepad(width=1200, height=700)
+    notepad.run()
